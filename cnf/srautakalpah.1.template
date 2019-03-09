@@ -79,10 +79,6 @@
             ],
             "ConstraintDescription": "must be a valid EC2 instance type."
         },
-        "LatestAmiId": {
-            "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
-            "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
-        },
         "SSHLocation": {
             "Description": "The IP address range that can be used to SSH to the EC2 instances",
             "Type": "String",
@@ -794,7 +790,32 @@
                                         "",
                                         [
                                             "#!/bin/bash\n",
-                                            "yum install php php-mysql mysql httpd -y\n"
+                                            "yum install php php-mysql mysql httpd -y\n",
+                                            "mv /var/www/html/wordpress/.[!.]* /var/www/html/",
+                                            "cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php\n",
+                                            "sed -i \"s/'database_name_here'/'",
+                                            {
+                                                "Ref": "DBName"
+                                            },
+                                            "'/g\" wp-config.php\n",
+                                            "sed -i \"s/'username_here'/'",
+                                            {
+                                                "Ref": "DBUser"
+                                            },
+                                            "'/g\" wp-config.php\n",
+                                            "sed -i \"s/'password_here'/'",
+                                            {
+                                                "Ref": "DBPassword"
+                                            },
+                                            "'/g\" wp-config.php\n",
+                                            "sed -i \"s/'localhost'/'",
+                                            {
+                                                "Fn::GetAtt": [
+                                                    "DBInstance",
+                                                    "Endpoint.Address"
+                                                ]
+                                            },
+                                            "'/g\" wp-config.php\n"
                                         ]
                                     ]
                                 },
@@ -821,9 +842,7 @@
                 }
             },
             "Properties": {
-                "ImageId": {
-                    "Ref": "LatestAmiId"
-                },
+                "ImageId": "ami-049cbce295a54b26b",
                 "InstanceType": {
                     "Ref": "InstanceType"
                 },
